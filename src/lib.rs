@@ -5,7 +5,7 @@ use core::marker::PhantomData;
 use std::{collections::VecDeque, io::Write, ops::Add};
 
 use rand_distr::{Distribution, Normal};
-use raw::FromRaw;
+use raw::ConverterFromRaw;
 use reconstructor::Reconstructor;
 
 pub trait Statistics {
@@ -14,8 +14,6 @@ pub trait Statistics {
     fn rand(&self) -> f32;
 }
 
-pub struct LittleEndian;
-pub struct BigEndian;
 
 pub struct RollingStats<T, E, const WINDOW_SIZE: usize> {
     _e: PhantomData<E>,
@@ -26,7 +24,7 @@ pub struct RollingStats<T, E, const WINDOW_SIZE: usize> {
 impl<T, E, const WINDOW_SIZE: usize> Write for RollingStats<T, E, WINDOW_SIZE>
 where
     T: Copy,
-    E: FromRaw<T>,
+    E: ConverterFromRaw<T>,
 {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let result = self.reconstructor.write(buf);
@@ -105,6 +103,7 @@ impl LossyF32Convertible for i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use raw::{LittleEndian, BigEndian};
     use approx::*;
 
     #[test]

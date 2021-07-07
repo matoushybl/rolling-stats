@@ -1,6 +1,6 @@
 use std::{io::ErrorKind, marker::PhantomData};
 
-use crate::FromRaw;
+use crate::ConverterFromRaw;
 
 pub struct Reconstructor<T, E> {
     _e: PhantomData<E>,
@@ -28,7 +28,7 @@ impl<T, E> Reconstructor<T, E> {
 
 impl<T, E> std::io::Write for Reconstructor<T, E>
 where
-    E: FromRaw<T>,
+    E: ConverterFromRaw<T>,
 {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let type_size = std::mem::size_of::<T>();
@@ -48,7 +48,7 @@ where
             data.extend_from_slice(&self.intermediate_buffer);
             data.extend_from_slice(&buf[..offset]);
 
-            self.buffer.push(E::from(&data).unwrap());
+            self.buffer.push(E::from_raw(&data).unwrap());
             self.intermediate_buffer.clear();
         }
 
@@ -60,7 +60,7 @@ where
                 .extend_from_slice(chunks.remainder())
         }
 
-        for value in chunks.map(|c| E::from(c)) {
+        for value in chunks.map(|c| E::from_raw(c)) {
             let value = value.map_err(|_| {
                 std::io::Error::new(ErrorKind::InvalidData, "Data conversion failed.")
             })?;
@@ -78,7 +78,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::BigEndian;
+    use crate::raw::BigEndian;
     use std::io::Write;
 
     use super::*;
