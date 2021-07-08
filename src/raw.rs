@@ -8,7 +8,7 @@ use thiserror::Error;
 /// The LittleEndian struct represents raw bytes conversion technique based on the Little Endian memory layout.
 /// # Examples
 /// ```
-/// use rolling_stats::raw::{LittleEndian, ConverterFromRaw};
+/// use rolling_stats::{LittleEndian, ConverterFromRaw};
 ///
 /// let raw_data = [1u8, 0, 0, 0];
 /// assert_eq!(1i32, LittleEndian::from_raw(&raw_data).unwrap());
@@ -17,7 +17,7 @@ pub struct LittleEndian;
 
 /// The BigEndian struct represents raw bytes conversion technique based on the Little Endian memory layout./// # Examples
 /// ```
-/// use rolling_stats::raw::{BigEndian, ConverterFromRaw};
+/// use rolling_stats::{BigEndian, ConverterFromRaw};
 ///
 /// let raw_data = [0u8, 0, 0, 1];
 /// assert_eq!(1i32, BigEndian::from_raw(&raw_data).unwrap());

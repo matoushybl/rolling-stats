@@ -9,7 +9,7 @@ use std::{collections::VecDeque, io::Write, ops::Add};
 
 use convertf32::LossyF32Convertible;
 use rand_distr::{Distribution, Normal};
-use raw::ConverterFromRaw;
+pub use raw::{ConverterFromRaw, BigEndian, LittleEndian};
 use reconstructor::Reconstructor;
 
 pub trait Statistics {

@@ -22,7 +22,7 @@ jobs:
           override: true
       - name: Build
         run: |
-          cargo doc --no-deps --all-features
+          cargo doc --no-deps --all-features --document-private-items
           echo "<meta http-equiv=\"refresh\" content=\"0; URL=rolling_stats/index.html\"/>" > target/doc/index.html
         #                                                     ^ set "NAME" to your crate name
       - name: Deploy
