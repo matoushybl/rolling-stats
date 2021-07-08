@@ -1,7 +1,7 @@
-//! Integere types in Rust do not allow for converting them into f32 using the `From/Into` traits 
-//! as these conversionsd are lossy.
+//! Integer types in Rust do not allow for converting them into f32 using the `From/Into` traits
+//! as these conversions are lossy.
 //!
-//! The following trait allows for workarounding this problem via a custom type.
+//! The following trait allows for workarounding this problem via a custom trait.
 pub trait LossyF32Convertible {
     /// Convert `self` into a float.
     fn convert(&self) -> f32;
