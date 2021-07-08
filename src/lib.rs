@@ -1,9 +1,13 @@
-pub mod raw;
+//!
+
+mod convertf32;
+mod raw;
 mod reconstructor;
 
 use core::marker::PhantomData;
 use std::{collections::VecDeque, io::Write, ops::Add};
 
+use convertf32::LossyF32Convertible;
 use rand_distr::{Distribution, Normal};
 use raw::ConverterFromRaw;
 use reconstructor::Reconstructor;
@@ -13,7 +17,6 @@ pub trait Statistics {
     fn std_dev(&self) -> f32;
     fn rand(&self) -> f32;
 }
-
 
 pub struct RollingStats<T, E, const WINDOW_SIZE: usize> {
     _e: PhantomData<E>,
@@ -48,7 +51,7 @@ impl<T, E, const WINDOW_SIZE: usize> RollingStats<T, E, WINDOW_SIZE> {
         Self {
             _e: PhantomData,
             buffer: VecDeque::<T>::new(),
-            reconstructor: Reconstructor::new(),
+            reconstructor: Reconstructor::default(),
         }
     }
 }
@@ -90,21 +93,11 @@ where
     }
 }
 
-pub trait LossyF32Convertible {
-    fn convert(&self) -> f32;
-}
-
-impl LossyF32Convertible for i32 {
-    fn convert(&self) -> f32 {
-        *self as f32
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use raw::{LittleEndian, BigEndian};
     use approx::*;
+    use raw::{BigEndian, LittleEndian};
 
     #[test]
     fn test_basic_functionality() {
@@ -116,7 +109,7 @@ mod tests {
         let roller = RollingStats::<i32, LittleEndian, 3> {
             _e: PhantomData,
             buffer,
-            reconstructor: Reconstructor::new(),
+            reconstructor: Reconstructor::default(),
         };
 
         assert_abs_diff_eq!(roller.mean(), 5.0);
