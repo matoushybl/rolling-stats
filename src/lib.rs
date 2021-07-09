@@ -1,18 +1,20 @@
 //!
 
 mod convertf32;
+mod partial_data_buffer;
 mod raw;
 mod reconstructor;
-mod partial_data_buffer;
 
 use core::marker::PhantomData;
 use std::{collections::VecDeque, io::Write, ops::Add};
 
+#[cfg(feature = "partial-data-buffer")]
+use crate::partial_data_buffer::IntermediateBuffer;
 use convertf32::LossyF32Convertible;
 use rand_distr::{Distribution, Normal};
 pub use raw::{BigEndian, ConverterFromRaw, LittleEndian};
+#[cfg(not(feature = "partial-data-buffer"))]
 use reconstructor::Reconstructor;
-use crate::partial_data_buffer::IntermediateBuffer;
 
 pub trait Statistics {
     fn mean(&self) -> f32;
@@ -54,9 +56,9 @@ where
 
 #[cfg(feature = "partial-data-buffer")]
 impl<T, E, const WINDOW_SIZE: usize> Write for RollingStats<T, E, WINDOW_SIZE>
-    where
-        T: Copy,
-        E: ConverterFromRaw<T>,
+where
+    T: Copy,
+    E: ConverterFromRaw<T>,
 {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let (reconstructed, remaining_buf) = self.intermediate_buffer.consume(&buf);
@@ -64,7 +66,9 @@ impl<T, E, const WINDOW_SIZE: usize> Write for RollingStats<T, E, WINDOW_SIZE>
             self.buffer.push_back(data);
         }
 
-        let parsed = remaining_buf.chunks_exact(std::mem::size_of::<T>()).map(|raw| E::from_raw(raw).unwrap());
+        let parsed = remaining_buf
+            .chunks_exact(std::mem::size_of::<T>())
+            .map(|raw| E::from_raw(raw).unwrap());
 
         self.buffer.extend(parsed);
         while self.buffer.len() > WINDOW_SIZE {

@@ -1,5 +1,5 @@
-use std::marker::PhantomData;
 use crate::ConverterFromRaw;
+use std::marker::PhantomData;
 
 pub struct IntermediateBuffer<T, E> {
     _e: PhantomData<E>,
@@ -18,9 +18,9 @@ impl<T, E> Default for IntermediateBuffer<T, E> {
 }
 
 impl<T, E> IntermediateBuffer<T, E>
-    where
-        E: ConverterFromRaw<T>,
-        T: Clone,
+where
+    E: ConverterFromRaw<T>,
+    T: Clone,
 {
     pub fn consume<'a>(&mut self, raw: &'a [u8]) -> (Option<T>, &'a [u8]) {
         if self.buffer.len() + raw.len() < self.type_size() {

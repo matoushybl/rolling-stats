@@ -29,6 +29,7 @@ impl<T, E> Default for Reconstructor<T, E> {
     }
 }
 
+#[allow(unused)]
 impl<T, E> Reconstructor<T, E> {
     /// Returns an iterator over references to the parsed data.
     pub fn data(&self) -> impl Iterator<Item = &T> {
