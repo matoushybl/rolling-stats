@@ -3,14 +3,16 @@
 mod convertf32;
 mod raw;
 mod reconstructor;
+mod partial_data_buffer;
 
 use core::marker::PhantomData;
 use std::{collections::VecDeque, io::Write, ops::Add};
 
 use convertf32::LossyF32Convertible;
 use rand_distr::{Distribution, Normal};
-pub use raw::{ConverterFromRaw, BigEndian, LittleEndian};
+pub use raw::{BigEndian, ConverterFromRaw, LittleEndian};
 use reconstructor::Reconstructor;
+use crate::partial_data_buffer::IntermediateBuffer;
 
 pub trait Statistics {
     fn mean(&self) -> f32;
@@ -20,10 +22,14 @@ pub trait Statistics {
 
 pub struct RollingStats<T, E, const WINDOW_SIZE: usize> {
     _e: PhantomData<E>,
+    #[cfg(not(feature = "partial-data-buffer"))]
     reconstructor: Reconstructor<T, E>,
+    #[cfg(feature = "partial-data-buffer")]
+    intermediate_buffer: IntermediateBuffer<T, E>,
     buffer: VecDeque<T>,
 }
 
+#[cfg(not(feature = "partial-data-buffer"))]
 impl<T, E, const WINDOW_SIZE: usize> Write for RollingStats<T, E, WINDOW_SIZE>
 where
     T: Copy,
@@ -46,12 +52,42 @@ where
     }
 }
 
+#[cfg(feature = "partial-data-buffer")]
+impl<T, E, const WINDOW_SIZE: usize> Write for RollingStats<T, E, WINDOW_SIZE>
+    where
+        T: Copy,
+        E: ConverterFromRaw<T>,
+{
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        let (reconstructed, remaining_buf) = self.intermediate_buffer.consume(&buf);
+        if let Some(data) = reconstructed {
+            self.buffer.push_back(data);
+        }
+
+        let parsed = remaining_buf.chunks_exact(std::mem::size_of::<T>()).map(|raw| E::from_raw(raw).unwrap());
+
+        self.buffer.extend(parsed);
+        while self.buffer.len() > WINDOW_SIZE {
+            self.buffer.pop_front();
+        }
+
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
 impl<T, E, const WINDOW_SIZE: usize> RollingStats<T, E, WINDOW_SIZE> {
     pub fn new() -> Self {
         Self {
             _e: PhantomData,
-            buffer: VecDeque::<T>::new(),
+            #[cfg(feature = "partial-data-buffer")]
+            intermediate_buffer: Default::default(),
+            #[cfg(not(feature = "partial-data-buffer"))]
             reconstructor: Reconstructor::default(),
+            buffer: VecDeque::<T>::new(),
         }
     }
 }
@@ -108,8 +144,11 @@ mod tests {
 
         let roller = RollingStats::<i32, LittleEndian, 3> {
             _e: PhantomData,
-            buffer,
+            #[cfg(feature = "partial-data-buffer")]
+            intermediate_buffer: IntermediateBuffer::default(),
+            #[cfg(not(feature = "partial-data-buffer"))]
             reconstructor: Reconstructor::default(),
+            buffer,
         };
 
         assert_abs_diff_eq!(roller.mean(), 5.0);

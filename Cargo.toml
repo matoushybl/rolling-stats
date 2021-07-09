@@ -5,6 +5,10 @@ version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["partial-data-buffer"]
+partial-data-buffer = []
+
 [dependencies]
 approx = "0.5.0"
 rand = "0.8.0"

@@ -15,7 +15,8 @@ use thiserror::Error;
 /// ```
 pub struct LittleEndian;
 
-/// The BigEndian struct represents raw bytes conversion technique based on the Little Endian memory layout./// # Examples
+/// The BigEndian struct represents raw bytes conversion technique based on the Little Endian memory layout.
+/// # Examples
 /// ```
 /// use rolling_stats::{BigEndian, ConverterFromRaw};
 ///
