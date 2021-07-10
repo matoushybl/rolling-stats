@@ -2,10 +2,19 @@ Rolling Stats
 =============
 > A crate implementing a simple circular buffer fed by raw data using the `std::io::Write` trait and outputing significant statistics about a window of the parsed data.
 
+## Features
+There is a feature, that allows enabling a bit slower solution to the problem of reconstruction partial data: `Reconstructor`. The feature is called `reconstructor`.
+
+The `Reconstructor` is slower, as it involves one more copy of the remaining data buffer.
+
+When this feature is not enabled, a better solution is utilized, as it works on the input data slice directly and takes care only of the incomplete data and preprocessing the input slice. This solution is developed as part of the `PartialDataBuffer` struct.
+
 ## Pain points, areas of improvements
 
-* Parsed data is pointlessly copied between the Reconstructor and the Rolling stats structure.
 * Rolling stats uses the VecDequeue as data storage, whereas a fixed size circular buffer might have been more performant.
+* More testing.
+* Better CI (cargo clippy, etc.)
+* Use correct documentation notation.
 
 ## License
 ```

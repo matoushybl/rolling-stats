@@ -1,13 +1,26 @@
+//! PartialDataBuffer represents a way of dealing with incomplete raw data.
+//! It consumes a slice of the newly received data, saves the data that are required for completing a previously incomplete data,
+//! parses them and returns a new slice, that contains valid data for further processing.
+//! Trailing incomplete data are handled as well.
+//! The new returned slice has appropriate size so that an integer number of values can be parsed using it.
+//!
+//! As opposed to the `Reconstructor`, this solution avoids pointless copies.
+
 use crate::ConverterFromRaw;
 use std::marker::PhantomData;
 
-pub struct IntermediateBuffer<T, E> {
+/// Implements the partial data buffer - handling of incomplete data in a stream of raw data.
+/// # Type parameteres
+/// * `T` - denotes the type that is supposed to be parsed from the raw data
+/// * `E` - denotes the raw data conversion algorithm
+pub struct PartialDataBuffer<T, E> {
     _e: PhantomData<E>,
     _t: PhantomData<T>,
     buffer: Vec<u8>,
 }
 
-impl<T, E> Default for IntermediateBuffer<T, E> {
+impl<T, E> Default for PartialDataBuffer<T, E> {
+    /// Creates an empty buffer.
     fn default() -> Self {
         Self {
             _e: PhantomData,
@@ -17,11 +30,18 @@ impl<T, E> Default for IntermediateBuffer<T, E> {
     }
 }
 
-impl<T, E> IntermediateBuffer<T, E>
+impl<T, E> PartialDataBuffer<T, E>
 where
     E: ConverterFromRaw<T>,
     T: Clone,
 {
+    /// Consumes the input slice of raw data, if enough data is present to reconstruct the partially received data, the data is and returned.
+    /// The raw data slice is stripped off of the leading bytes belonging to the previously received incomplete data, any trailing partial data is stored to the internal buffer.
+    ///
+    /// # Returns
+    /// Returns a slice constructed by removing partial data from the raw data stream.
+    /// The returned slice is free of both the leading and trailing partial data.
+    /// The returned slice contains a an integer of the target type lengths.
     pub fn consume<'a>(&mut self, raw: &'a [u8]) -> (Option<T>, &'a [u8]) {
         if self.buffer.len() + raw.len() < self.type_size() {
             self.buffer.extend(raw);
@@ -51,10 +71,12 @@ where
         (reconstructed_value, &raw[offset..(raw.len() - remainder)])
     }
 
+    /// Clears the inner buffer, discarding the contained data.
     pub fn clear(&mut self) {
         self.buffer.clear();
     }
 
+    /// Returns the size in bytes of the type meant to be reconstructed from the raw data,
     pub fn type_size(&self) -> usize {
         std::mem::size_of::<T>()
     }
@@ -67,7 +89,7 @@ mod tests {
 
     #[test]
     fn works() {
-        let mut buffer = IntermediateBuffer::<i32, LittleEndian>::default();
+        let mut buffer = PartialDataBuffer::<i32, LittleEndian>::default();
 
         let data = [0x1, 0x0];
         let (item, rest) = buffer.consume(&data);
