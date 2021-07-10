@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["PartialDataBuffer","Implements the partial data buffer - handling of incomplete data in a stream of raw data."]]});
